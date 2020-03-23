@@ -1,27 +1,19 @@
 #!/usr/bin/env python
+#Rafael Aroca <aroca@ufscar.br>
 
-# The MIT License (MIT)
-#
-# Copyright (c) 2017 Ivor Wanders
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#WebSocket to Python Interactive Console
+#Part of BIPES Project - Block based Integrated Platform for Embedded Systems
+#http://www.bipes.net.br
 
+#Based on PyWSocket by Sanket 
+#https://superuser.blog/websocket-server-python/
+#https://tools.ietf.org/id/draft-ietf-hybi-thewebsocketprotocol-09.html
+#https://github.com/sanketplus/PyWSocket
+
+#Based also on socketserverREPL by Ivor Wanders
+#https://github.com/iwanders/socketserverREPL
+
+#WebSocket Protocol
 #https://tools.ietf.org/html/rfc6455
 
 import code
@@ -40,7 +32,6 @@ WS_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 import logging
 logging.basicConfig(format='%(message)s')
-
 
 global line
 line=""
@@ -250,7 +241,7 @@ class InteractiveSocket(code.InteractiveConsole):
 		    l = int(ByteToHex(x[1]), 16)
 
 		    if t == 0x88:
-			    logging.warning('Chegou pacote com close socket ')
+			    logging.warning('Received a close socket packet')
                             pass
 
 		    #if l & 0x80: # len is composed of 7 LSBs, so we excludde MSB 
@@ -305,7 +296,7 @@ class InteractiveSocket(code.InteractiveConsole):
 			    #logging.warning('Decoded payload = ' + str(payload))
 			
 		    if t == 0x81:
-			    #logging.warning('Chegou pacote WebSocket com texto')
+			    #logging.warning('Text WebSocket packet')
 			    logging.warning('')
 			    #k = int(ByteToHex(x[2]), 16)
 			    #payload_len = k - 128
@@ -318,9 +309,9 @@ class InteractiveSocket(code.InteractiveConsole):
 		#here, we have to build the whole line and just send after a full line
 		#is written
 		global line
-		logging.warning('-------------------')
-		logging.warning('line antes = ' + str(line))
-		logging.warning('payload antes = ' + str(payload))
+		#logging.warning('-------------------')
+		#logging.warning('line before = ' + str(line))
+		#logging.warning('payload before = ' + str(payload))
 
 		x = bytes(payload)
 		p0 = int(ByteToHex(x[0]), 16)	    
@@ -480,7 +471,7 @@ class RequestPythonREPL(ss.StreamRequestHandler):
 			self.send_frame("Starting Python Remote Shell...")
 			auth=1
                 if "b" == decoded_payload.lower():
-			"Bidding goodbye to our client..."
+			"Goodbye to our client..."
 			self.send_frame("Goodbye.")
 			return
 
