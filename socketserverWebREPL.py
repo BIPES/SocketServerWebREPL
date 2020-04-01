@@ -24,6 +24,8 @@ import socket
 import argparse
 import os
 import sys
+#import readline # optional, will allow Up/Down/History in the console
+
 
 #For Python WebREPL
 import hashlib
@@ -94,7 +96,7 @@ class ThreadAwareStdout(object):
             #thread_scope.wfile.write(data.encode('ascii'))
 
             #Send using WebSocket
-            data = data.replace("\n", "\n\r")
+            data = data.replace("\n", "\n\r") 
 	    total=len(data)
 	    #logging.warning(total)
 	    #logging.warning("Bytes to send = " + str(total))
@@ -114,12 +116,13 @@ class ThreadAwareStdout(object):
 
 		    try:
 			    bytearr = [ 0x81, len(dataL)]
+			    bytearr.extend(dataL.encode('ascii'))
 			    thread_scope.wfile.write(bytearray(bytearr))
-			    thread_scope.wfile.write(dataL.encode('ascii'))
+			    #thread_scope.wfile.write(dataL.encode('ascii'))
 			    thread_scope.wfile.flush()
-		    except:
-			    #e = traceback.print_Exc()
-			    logging.warning("exception while writing to socket "  )
+		    except Exception as e:
+			    emsg = sys.exc_value
+                            logging.warning("stdout send: exception while writing to socket: " + str(emsg)  )
 			    pass
 		    sent = sent + 100
 	    #logging.warning("stdout write done")
@@ -185,12 +188,13 @@ class InteractiveSocket(code.InteractiveConsole):
 
 		    try:
 			    bytearr = [ 0x81, len(dataL)]
+			    bytearr.extend(dataL.encode('ascii'))
 			    self.wfile.write(bytearray(bytearr))
-			    self.wfile.write(dataL.encode('ascii'))
+			    #self.wfile.write(dataL.encode('ascii'))
 			    self.wfile.flush()
-		    except:
-			    #e = traceback.print_Exc()
-			    logging.warning("exception while writing to socket "  )
+                    except Exception as e:
+			    emsg = sys.exc_value
+                            logging.warning("stdout send: exception while writing to socket: " + str(emsg)  )
 			    pass
 		    sent = sent + 100
 	    #logging.warning("stderr write done")
@@ -203,7 +207,7 @@ class InteractiveSocket(code.InteractiveConsole):
 	#logging.warning('6')
 
         # print the prompt.
-	#logging.warning('prompt = ' + prompt)
+	logging.warning('========>>>>>>>>> prompt = ' + prompt)
         self.write(prompt)
 
 	while True:
@@ -358,25 +362,46 @@ class InteractiveSocket(code.InteractiveConsole):
 			pasteModeEnded=True
 			#runsource(line)
 
+			logging.warning('Trying to exec code all at once')
+                        self.write(line)
+                        exec(line, globals())
+
+
 
 		y = ByteToHex(x)
-		#logging.warning('payload = ' + y)
+		logging.warning('payload = ' + y)
 
 
 		#Check if we got a backspace and send correct pattern
 		if y == '7F': #backspace received
 			#backspace to remote terminal is 1b 5b 4b
 			logging.warning('backspace')
-			backspace = [ 0x1b, 0x5b, 0x4b]
-			#self.write(backspace)
+                        #bytearr = [ 0x81, 0x01, 0x08, 0x81, 0x03, 0x1b, 0x5b, 0x4b]
+                        #bytearr = [ 0x81, 0x01, 0x08, 0x81, 0x03, 0x1b, 0x5b, 0x4b]
+			self.write(b'\x08')
+                        self.write(b'\x1b')
+                        self.write(b'\x5b')
+                        self.write(b'\x4b')
+
+                        #remove character from input string to python
+                        logging.warning("line before backspace = " + line)
+                        line = line[:-2]
+                        logging.warning("line after backspace = " + line)
+
+		elif y == "1B 5B 41":
+			logging.warning("UP Key pressed " )
+		elif y == "1B 5B 42":
+			logging.warning("DOWN Key pressed " )
+			
 		else:
 			#echo character back to client, for better interactive session
 			#echo typed character back to WebREPL client
 			#self.write(".") #Test / Works!
-			self.write(x)
+                        if not pasteMode:
+                            self.write(x)
 
 		
-		#logging.warning('prompt = ' + prompt)
+		logging.warning('prompt = ' + prompt)
 		
 		if not pasteMode and (y == '0D' or '0D' in y) or pasteModeEnded:
 			pasteModeEnded=False
@@ -390,8 +415,21 @@ class InteractiveSocket(code.InteractiveConsole):
 
 			logging.warning('ENTER PRESSED ')
 			self.write("\r\n")
-			r = line
-			#r = line.strip()
+			#r = line
+
+			#isso resolveu parcialmente, mas agora temos 
+			#outro bug!
+                        logging.warning('prompt = ' + prompt)
+                        if prompt.strip() == '...':
+                            logging.warning('Prompt with ... ')
+                            logging.warning('len(line) =' + str(len(line)))
+                            if len(line) == 1:
+                                r = line
+                            else:
+                                r = line.rstrip()
+                        else:
+                            logging.warning('Prompt with >>> ')
+                            r = line
 
 			#try:
 			    # Python 2 / 3 difference.
@@ -579,7 +617,7 @@ if __name__ == "__main__":
         args.port = int(os.environ["REPL_PORT"])
 
     if (args.port is None):  # Still None, go for fallback.
-        args.port = 1338
+        args.port = 8266
 
 
     # Create the server object and a thread to serve.
