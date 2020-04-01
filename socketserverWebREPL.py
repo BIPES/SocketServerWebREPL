@@ -595,11 +595,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Expose a Python REPL loop"
                                      " over a tcp socket.")
     parser.add_argument('-i', '--hostname', default=None,
-                        help="Ip to bind to defaults to 127.0.0.1, will use "
+                        help="Ip to bind to defaults to 0.0.0.0, will use "
                              "environment value of REPL_HOST if set.")
     parser.add_argument('-p', '--port', default=None, type=int,
                         help="Port to bind to. Defaults"
-                        " to 1337, will use environment value of REPL_PORT if"
+                        " to 8266, will use environment value of REPL_PORT if"
                         " set.")
     parser.add_argument('-k', '--kill-active', default=False,
                         action="store_true", help="Kill active connections on"
@@ -611,7 +611,7 @@ if __name__ == "__main__":
         args.hostname = os.environ["REPL_HOST"]
 
     if args.hostname is None:  # still None, go for fallback.
-        args.hostname = "127.0.0.1"
+        args.hostname = "0.0.0.0"
 
     if "REPL_PORT" in os.environ and args.port is None:
         args.port = int(os.environ["REPL_PORT"])
@@ -637,7 +637,7 @@ if __name__ == "__main__":
 
     print("BIPES Project - Bridge started")
     print("Now, access the Python Console from a Web Browser using a WebREPL client")
-    print("For example: https://micropython.org/webrepl/#127.0.0.1:1338/")
+    print("For example: https://micropython.org/webrepl/#127.0.0.1:8266/")
 
     # Ensure main thread does not quit unless we want it to.
     while not should_exit:
