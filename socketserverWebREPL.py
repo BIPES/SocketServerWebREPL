@@ -27,7 +27,6 @@ import os
 import sys
 # import readline # optional, will allow Up/Down/History in the console
 
-
 # For Python WebREPL
 import hashlib
 import base64
@@ -125,7 +124,7 @@ class ThreadAwareStdout(object):
                     # thread_scope.wfile.write(dataL.encode('ascii'))
                     thread_scope.wfile.flush()
                 except Exception as e:
-                    emsg = sys.exc_value
+                    emsg = sys.exc_info()[1]
                     logging.warning(
                         "stdout send: exception while writing to socket: " + str(emsg))
                     pass
@@ -198,7 +197,7 @@ class InteractiveSocket(code.InteractiveConsole):
                     # self.wfile.write(dataL.encode('ascii'))
                     self.wfile.flush()
                 except Exception as e:
-                    emsg = sys.exc_value
+                    emsg = sys.exc_info()[1]
                     logging.warning(
                         "stdout send: exception while writing to socket: " + str(emsg))
                     pass
