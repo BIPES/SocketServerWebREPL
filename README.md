@@ -4,7 +4,7 @@ Interactive Python Console over a WebSocket connection, allowing users to acces 
 Usage:
 
 1. Download this Python Code: git clone https://github.com/BIPES/SocketServerWebREPL.git
-2. Run this program (cd SocketServerWebREPL; python socketserverWebREPL.py)
+2. Run this program (cd SocketServerWebREPL; python2 socketserverWebREPL.py)
 3. Access the Interactive Console and remotely run Python code or block program
 4. Web client example: https://micropython.org/webrepl/#127.0.0.1:1338/ (replace 127.0.0.1:1338 with the correct port and IP)
 5. Use BIPES to program, monitor and control your Linux device: http://www.bipes.net.br/beta2/ui/
