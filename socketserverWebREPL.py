@@ -326,49 +326,67 @@ class InteractiveSocket(code.InteractiveConsole):
 
             #logging.warning('data = ' + str(data))
             # 0x04 and 0x05 are for raw transmission mode
-            if p0 == 0x04 or p0 == 0x05:
-                logging.warning('will remove 0x05 and 0x04')
-                payload = payload[1:]
-            if p0 == 0x04 or p0 == 0x05:
-                logging.warning('will remove 0x05 and 0x04 again')
-                payload = payload[1:]
+            #if p0 == 0x04 or p0 == 0x05:
+            #    logging.warning('will remove 0x05 and 0x04')
+            #    payload = payload[1:]
+            #if p0 == 0x04 or p0 == 0x05:
+            #    logging.warning('will remove 0x05 and 0x04 again')
+            #    payload = payload[1:]
 
-            payload = payload.decode("utf8", "ignore")
+            payloadW = payload.decode("utf8", "ignore")
             logging.warning('payload depois = ' + str(payload))
-            line = line + payload
+            try:
+                for c in payloadW:
+                    ch = int(ByteToHex(c), 16)
+                    logging.warning("C: " + str(c) + " CH: " + str(ch))
+
+                    if ch == 0x05:
+                        logging.warning('*** PASTE MODE STARTED')
+                        tmpFile = open("tmpCode.py", "w")
+                        tmpFile.write('\r\n')
+                        tmpFile.write('#Code Received from BIPES by WebREPL')
+                        tmpFile.write('\r\n')
+                        line = ''
+                        pasteMode = True
+                        tmpFile.close()
+                    else:
+                        if ch == 0x04:
+                            logging.warning('*** PASTE MODE ENDED')
+                            pasteMode = False
+                            logging.warning('==============')
+                            logging.warning('*** RUNNING ***')
+                            self.write("\r\n")
+                            self.write("Running the program...\r\n")
+                            exec(open('./tmpCode.py').read(),globals())
+                            self.write("\r\n")
+                            self.write("Program finished\r\n")
+                            logging.warning('==============')
+                            #line=''
+                            #payload=''
+                            #payloadW=''
+                        else:
+
+                            if ch == 13:
+                                xl = '\r\n'
+                            else:
+                                xl = c
+
+                            if (pasteMode):
+                                tmpFile = open("tmpCode.py", "a")
+                                tmpFile.write(xl)
+                                tmpFile.close()
+            except:
+                logging.warning("ERRO 1")
+                pass
+
+            if not pasteMode:
+                line = line + payload
+            else:
+                line=''
             #logging.warning('line = ' + line)
 
             global pasteMode
             global pasteModeEnded
-            if p0 == 0x05:  # start paste mode
-                logging.warning('PASTE MODE STARTED')
-                line = ''
-                pasteMode = True
-                pasteModeEnded = False
-
-            if p0 == 0x04:  # end paste mode
-                logging.warning('PASTE MODE ENDED')
-                logging.warning('==============')
-                newline = ''
-                for c in line:
-                    ch = int(ByteToHex(c), 16)
-                    logging.warning("C: " + str(c) + " CH: " + str(ch))
-                    if ch == 13:
-                        newline = newline + '\r\n'
-                    else:
-                        newline = newline + c
-
-                logging.warning('==============')
-                logging.warning(newline)
-                line = newline
-                logging.warning('==============')
-                pasteMode = False
-                pasteModeEnded = True
-                # runsource(line)
-
-                logging.warning('Trying to exec code all at once')
-                self.write(line)
-                exec(line, globals())
 
             y = ByteToHex(x)
             logging.warning('payload = ' + y)
@@ -398,8 +416,14 @@ class InteractiveSocket(code.InteractiveConsole):
                 # echo character back to client, for better interactive session
                 # echo typed character back to WebREPL client
                 # self.write(".") #Test / Works!
-                if not pasteMode:
-                    self.write(x)
+
+                #Option 1: does not show program being pasted on the console
+                #if not pasteMode:
+                #    self.write(x)
+
+                #Option 2: shows the program being pasted on the console
+                xm = x.replace('\r', '\r\n')
+                self.write(xm)
 
             logging.warning('prompt = ' + prompt)
 
@@ -430,15 +454,6 @@ class InteractiveSocket(code.InteractiveConsole):
                 else:
                     logging.warning('Prompt with >>> ')
                     r = line
-
-                # try:
-                    # Python 2 / 3 difference.
-                    #r = r.decode('ascii')
-                    #r = "i=10 \r\n"
-                    #logging.warning('8: ' + r)
-                # except:
-                #    logging.warning('except on 8' + r)
-                #    pass
 
                 # The default repl quits on control+d, control+d causes the line that
                 # has been typed so far to be sent by netcat. That means that pressing
