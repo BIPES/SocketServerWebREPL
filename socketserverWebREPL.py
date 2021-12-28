@@ -333,6 +333,9 @@ class InteractiveSocket(code.InteractiveConsole):
             #    logging.warning('will remove 0x05 and 0x04 again')
             #    payload = payload[1:]
 
+            global pasteMode
+            global pasteModeEnded
+
             payloadW = payload.decode("utf8", "ignore")
             logging.warning('payload depois = ' + str(payload))
             try:
@@ -341,7 +344,7 @@ class InteractiveSocket(code.InteractiveConsole):
                     logging.warning("C: " + str(c) + " CH: " + str(ch))
 
                     if ch == 0x05:
-                        logging.warning('*** PASTE MODE STARTED')
+                        logging.warning('*** PASTE MODE STARTED ***')
                         tmpFile = open("tmpCode.py", "w")
                         tmpFile.write('\r\n')
                         tmpFile.write('#Code Received from BIPES by WebREPL')
@@ -351,7 +354,7 @@ class InteractiveSocket(code.InteractiveConsole):
                         tmpFile.close()
                     else:
                         if ch == 0x04:
-                            logging.warning('*** PASTE MODE ENDED')
+                            logging.warning('*** PASTE MODE ENDED ***')
                             pasteMode = False
                             logging.warning('==============')
                             logging.warning('*** RUNNING ***')
@@ -360,10 +363,11 @@ class InteractiveSocket(code.InteractiveConsole):
                             exec(open('./tmpCode.py').read(),globals())
                             self.write("\r\n")
                             self.write("Program finished\r\n")
+                            self.write(">>> ")
                             logging.warning('==============')
-                            #line=''
-                            #payload=''
-                            #payloadW=''
+                            line=''
+                            payload=''
+                            x=''
                         else:
 
                             if ch == 13:
@@ -384,9 +388,6 @@ class InteractiveSocket(code.InteractiveConsole):
             else:
                 line=''
             #logging.warning('line = ' + line)
-
-            global pasteMode
-            global pasteModeEnded
 
             y = ByteToHex(x)
             logging.warning('payload = ' + y)
@@ -425,11 +426,10 @@ class InteractiveSocket(code.InteractiveConsole):
                 xm = x.replace('\r', '\r\n')
                 self.write(xm)
 
-            logging.warning('prompt = ' + prompt)
 
-            if not pasteMode and (y == '0D' or '0D' in y) or pasteModeEnded:
-                pasteModeEnded = False
+            if not pasteMode and (y == '0D' or '0D' in y):
 
+                logging.warning('prompt = ' + prompt)
                 #logging.warning(' ')
                 logging.warning('line = ' + line)
                 x = bytes(line)
@@ -441,8 +441,6 @@ class InteractiveSocket(code.InteractiveConsole):
                 self.write("\r\n")
                 #r = line
 
-                # isso resolveu parcialmente, mas agora temos
-                # outro bug!
                 logging.warning('prompt = ' + prompt)
                 if prompt.strip() == '...':
                     logging.warning('Prompt with ... ')
