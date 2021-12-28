@@ -503,28 +503,50 @@ class RequestPythonREPL(ss.StreamRequestHandler):
         # let's shake hands shall we?
             self.shake_hand(key)
 
-            self.send_frame(
-                "\r\nWelcome to BIPES Project. Type s to start python shell ...\r\n")
-            # TODO: ask for password
+            self.send_frame("\r\nWelcome to SocketServerWebREPL")
+            self.send_frame("\r\nPart of BIPES Project\r\n")
+            self.send_frame("Password: ")
 
             global auth
             auth = 0
+            line=''
             while auth == 0:
                 try:
                     payload = self.decode_frame(
                         bytearray(self.request.recv(1024).strip()))
                     decoded_payload = payload.decode('utf-8')
-                    # print "R: = " + decoded_payload
+                    print "R: = " + decoded_payload
+                    k = bytes(decoded_payload)
+                    x = k.replace("\n", "\r") #replace 0A (\n) by 0D (\r)
+                    y = ByteToHex(x)
+                    logging.warning('lineBytes = ' + y)
+                    line = line + x
+                    logging.warning('line = ' + line)
+
+                    if (y == '0D' or '0D' in y):
+                        logging.warning('ENTER PRESSED ')
+                        sLine=line.rstrip('\r')
+                        logging.warning('line = ' + line)
+                        logging.warning('sLine = ' + sLine)
+                        line=''
+
+                        password='bipes'
+                        if password == sLine:
+                            self.send_frame("\r\nPassword accepted")
+                            auth=1
+                        else:
+                            self.send_frame("\r\nInvalid password")
+                            self.send_frame("\r\nPassword: ")
                 except:
                     pass
 
-                if "s" == decoded_payload.lower():
-                    self.send_frame("Starting Python Remote Shell...")
-                    auth = 1
-                if "b" == decoded_payload.lower():
-                    "Goodbye to our client..."
-                    self.send_frame("Goodbye.")
-                    return
+                #if "s" == decoded_payload.lower():
+                #    self.send_frame("Starting Python Remote Shell...")
+                #    auth = 1
+                #if "b" == decoded_payload.lower():
+                #    "Goodbye to our client..."
+                #    self.send_frame("Goodbye.")
+                #    return
 
         else:
             self.request.sendall("HTTP/1.1 400 Bad Request\r\n" +
